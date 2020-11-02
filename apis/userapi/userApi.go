@@ -22,7 +22,7 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		"name":          user.Username,
 		"password":      user.Password,
 		"grant-type":    "password",
-		"client-secret": "secret",
+		"client-secret": "secret-key",
 	})
 
 	if err != nil {
