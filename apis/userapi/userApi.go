@@ -1,107 +1,60 @@
 package userapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 
-	"github.com/PhongVX/golang-rest-api/auth"
 	"github.com/PhongVX/golang-rest-api/entities"
-	"github.com/PhongVX/golang-rest-api/models"
 )
 
-func Authorize(response http.ResponseWriter, request *http.Request) {
-
+func Login(response http.ResponseWriter, request *http.Request) {
+	fmt.Println("redirected")
 	var user entities.Owner
-	err := json.NewDecoder(request.Body).Decode(&user)
+	_ = json.NewDecoder(request.Body).Decode(&user)
+	fmt.Println(user.Password)
+	fmt.Println(user.Username)
+
+	requestBody, err := json.Marshal(map[string]string{
+		"name":          user.Username,
+		"password":      user.Password,
+		"grant-type":    "password",
+		"client-secret": "secret",
+	})
+
 	if err != nil {
-		responseWithError(response, http.StatusForbidden, err.Error())
+		fmt.Println("test 1")
+		responseWithError(response, http.StatusBadRequest, err.Error())
 	} else {
-		token, err := auth.CreateToken(user.Username, user.Password)
+		resp, err := http.Post("http://127.0.0.1:3000/authorize", "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
-			responseWithError(response, http.StatusForbidden, err.Error())
-		} else {
-			fmt.Println("OK")
-			responseWithJSON(response, http.StatusOK, token)
+			fmt.Println("test 2")
+			responseWithError(response, http.StatusBadRequest, err.Error())
 		}
+		defer resp.Body.Close()
 
 	}
-	// pgdb := db.GetDB()
-	// defer pgdb.Close()
-	// res, err := pgdb.Query("select * from public.'Users'")
-	// if err != nil {
-	// 	fmt.Println("a", err)
-	// } else {
-	// 	fmt.Println("b", res)
-	// }
-
 }
 
 func GetResource(response http.ResponseWriter, request *http.Request) {
-	err := auth.TokenValid(request)
-	if err != nil {
-		responseWithError(response, http.StatusForbidden, err.Error())
-	} else {
-		responseWithJSON(response, http.StatusOK, "resource")
-	}
-}
+	var user entities.Response
+	_ = json.NewDecoder(request.Body).Decode(&user)
+	url := "http://127.0.0.1:3000/api/resource"
+	var bearer = "Bearer " + user.AccessToken
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 
-func FindUser(response http.ResponseWriter, request *http.Request) {
-	ids, ok := request.URL.Query()["id"]
-	if !ok || len(ids) < 1 {
-		responseWithError(response, http.StatusBadRequest, "Url Param 'id' is missing")
-		return
-	}
-	user, err := models.FindUser(ids[0])
 	if err != nil {
-		responseWithError(response, http.StatusBadRequest, err.Error())
-		return
+		log.Println("Error on response.\n[ERRO] -", err)
 	}
-	responseWithJSON(response, http.StatusOK, user)
-}
 
-func CreateUser(response http.ResponseWriter, request *http.Request) {
-	var user entities.User
-	err := json.NewDecoder(request.Body).Decode(&user)
-	if err != nil {
-		responseWithError(response, http.StatusBadRequest, err.Error())
-	} else {
-		result := models.CreateUser(&user)
-		if !result {
-			responseWithError(response, http.StatusBadRequest, "Couldn't create user")
-			return
-		}
-		responseWithJSON(response, http.StatusOK, user)
-	}
-}
-
-func UpdateUser(response http.ResponseWriter, request *http.Request) {
-	var user entities.User
-	err := json.NewDecoder(request.Body).Decode(&user)
-	if err != nil {
-		responseWithError(response, http.StatusBadRequest, err.Error())
-	} else {
-		result := models.UpdateUser(&user)
-		if !result {
-			responseWithError(response, http.StatusBadRequest, "Couldn't update user")
-			return
-		}
-		responseWithJSON(response, http.StatusOK, "Update user successfully")
-	}
-}
-
-func Delete(response http.ResponseWriter, request *http.Request) {
-	ids, ok := request.URL.Query()["id"]
-	if !ok || len(ids) < 1 {
-		responseWithError(response, http.StatusBadRequest, "Url Param 'id' is missing")
-		return
-	}
-	result := models.DeleteUser(ids[0])
-	if !result {
-		responseWithError(response, http.StatusBadRequest, "Couldn't delete user")
-		return
-	}
-	responseWithJSON(response, http.StatusOK, "Delete user successfully")
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string([]byte(body)))
 }
 
 func responseWithError(response http.ResponseWriter, statusCode int, msg string) {

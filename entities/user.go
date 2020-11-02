@@ -1,7 +1,13 @@
 package entities
 
+type Response struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   string `json:"expires_in"`
+}
+
 type Owner struct {
-	Username string `json:"username"`
+	Username string `json:"name"`
 	Password string `json:"password"`
 }
 
