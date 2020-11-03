@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/PhongVX/golang-rest-api/entities"
 )
 
+// receive username - password from resource owner -> POST request to author server to get access token
 func Login(response http.ResponseWriter, request *http.Request) {
+
 	var user entities.Owner
-	_ = json.NewDecoder(request.Body).Decode(&user)
+	json.NewDecoder(request.Body).Decode(&user)
 
 	requestBody, err := json.Marshal(map[string]string{
 		"name":          user.Username,
@@ -35,9 +36,12 @@ func Login(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// get access token from authorization server -> GET request to obtain resource
 func GetResource(response http.ResponseWriter, request *http.Request) {
+
 	var user entities.Response
-	_ = json.NewDecoder(request.Body).Decode(&user)
+	json.NewDecoder(request.Body).Decode(&user)
+
 	url := "http://127.0.0.1:3000/api/resource"
 	var bearer = "Bearer " + user.AccessToken
 	req, err := http.NewRequest("GET", url, nil)
@@ -46,7 +50,7 @@ func GetResource(response http.ResponseWriter, request *http.Request) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Println("Error on response.\n[ERRO] -", err)
+		fmt.Println("Error on response.\n[ERRO] -", err)
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
