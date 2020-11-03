@@ -12,11 +12,8 @@ import (
 )
 
 func Login(response http.ResponseWriter, request *http.Request) {
-	fmt.Println("redirected")
 	var user entities.Owner
 	_ = json.NewDecoder(request.Body).Decode(&user)
-	fmt.Println(user.Password)
-	fmt.Println(user.Username)
 
 	requestBody, err := json.Marshal(map[string]string{
 		"name":          user.Username,
@@ -26,16 +23,15 @@ func Login(response http.ResponseWriter, request *http.Request) {
 	})
 
 	if err != nil {
-		fmt.Println("test 1")
 		responseWithError(response, http.StatusBadRequest, err.Error())
 	} else {
 		resp, err := http.Post("http://127.0.0.1:3000/authorize", "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
-			fmt.Println("test 2")
 			responseWithError(response, http.StatusBadRequest, err.Error())
 		}
 		defer resp.Body.Close()
-
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string([]byte(body)))
 	}
 }
 
