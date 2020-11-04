@@ -32,7 +32,7 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println(string([]byte(body)))
+		responseWithJSON(response, http.StatusOK, string([]byte(body)))
 	}
 }
 
@@ -54,7 +54,9 @@ func GetResource(response http.ResponseWriter, request *http.Request) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string([]byte(body)))
+	fmt.Println("data:", string([]byte(body)))
+	//responseWithJSON(response, http.StatusOK, string([]byte(body)))
+
 }
 
 func responseWithError(response http.ResponseWriter, statusCode int, msg string) {
